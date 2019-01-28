@@ -13,8 +13,7 @@ Once LuaRocks has been installed, you must then install LuaFileSystem:
 
 ```luarocks install luafilesystem```
 
-You will also need some compiler such as GCC (Linux/Unix) or have Visual Studio installed for 
-Windows.
+You will also need some compiler such as GCC (Linux/Unix) or Visual Studio (Windows).
 
 # Usage
 ```
