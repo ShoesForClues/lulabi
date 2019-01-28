@@ -15,7 +15,7 @@ Once LuaRocks has been installed, you must then install LuaFileSystem:
 
 You will also need some compiler such as:
 
-- [GCC](https://gcc.gnu.org/) (Linux/Unix/[MinGW](https://osdn.net/projects/mingw/releases/))
+- [GCC/G++](https://gcc.gnu.org/) (Linux/Unix/[MinGW](https://osdn.net/projects/mingw/releases/))
 - [DJGPP](https://github.com/andrewwutw/build-djgpp) (Linux/DOS/Windows)
 - [Visual Studio](https://visualstudio.microsoft.com/) (Windows)
 
