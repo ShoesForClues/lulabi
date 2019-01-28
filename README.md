@@ -14,8 +14,11 @@ lulabi help
 lulabi build -c <compiler> -std <c_standard> -o <output_file> -f <source_directory>
 
 -c <compiler>                Select compiler (default GCC | configured from lulabi_make)
+  
 -std <c_standard>            Select C standard (default c++0x | configured from lulabi_make)
+
 -o <output_file>             Set output file (default "output" | configured from lulabi_make)
+
 -f <source_directory>        Set source directory to compile
   
 # License
