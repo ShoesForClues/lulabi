@@ -13,12 +13,10 @@ Once LuaRocks has been installed, you must then install LuaFileSystem:
 
 ```luarocks install luafilesystem```
 
-You will also need some compiler. Currently supported compilers:
-GCC (Linux/Unix)
-
-DJGPP (DOS/Windows)
-
-Visual Studio (Windows)
+You will also need some compiler such as:
+-GCC (Linux/Unix)
+-DJGPP (DOS/Windows)
+-Visual Studio (Windows)
 
 # Usage
 ```
