@@ -20,5 +20,5 @@ lulabi build -c <compiler> -std <c_standard> -o <output_file> -f <source_directo
 ```
 
 # License
-This software is free to use. You can modify it and redistribute it under 
-the terms of the MIT license.
+This software is free to use. You can modify it and redistribute it under the terms of the 
+MIT license. Check [LICENSE](LICENSE) for further details.
