@@ -21,7 +21,6 @@ You will also need some compiler such as:
 
 # Usage
 ```
-lulabi help
 lulabi build -c <compiler> -std <c_standard> -o <output_file> -f <source_directory>
 
 -c <compiler>                Select compiler (default GCC | configured from lulabi_make)
