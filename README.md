@@ -10,6 +10,7 @@ as GCC, DJGPP, Open Watcom or Visual Studio cl. It's supported to run in
 Windows, Linux, Mac OSX, and probably other Unix systems.
 
 # Usage
+```
 lulabi help
 lulabi build -c <compiler> -std <c_standard> -o <output_file> -f <source_directory>
 
@@ -17,7 +18,8 @@ lulabi build -c <compiler> -std <c_standard> -o <output_file> -f <source_directo
 -std <c_standard>            Select C standard (default c++0x | configured from lulabi_make)
 -o <output_file>             Set output file (default "output" | configured from lulabi_make)
 -f <source_directory>        Set source directory to compile
-  
+```
+
 # License
 This software is free to use. You can modify it and redistribute it under 
 the terms of the MIT license.
