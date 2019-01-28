@@ -3,11 +3,10 @@ Lua Light Application Building Interface [Version 0.0.1]
 
 Software created by Jason Lee © 2019
 
-LuLABI (lullaby) is a build system written in pure lua that allows the 
-user to easily compile their C/C++ projects. The only dependencies are 
-LuaFileSystem which can be acquired from LuaRocks, and a compiler such 
-as GCC, DJGPP, Open Watcom or Visual Studio cl. It's supported to run in 
-Windows, Linux, Mac OSX, and probably other Unix systems.
+LuLABI (lullaby) is a build system written in pure lua that allows the user to easily compile 
+their C/C++ projects. The only dependencies are LuaFileSystem which can be acquired from 
+LuaRocks, and a compiler such as GCC, DJGPP, Open Watcom or Visual Studio cl. It's supported 
+to run in Windows, Linux, Mac OSX, and probably other Unix systems.
 
 # Usage
 ```
