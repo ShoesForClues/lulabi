@@ -9,7 +9,7 @@ LuaFileSystem which can be acquired from LuaRocks, and a compiler such
 as GCC, DJGPP, Open Watcom or Visual Studio cl. It's supported to run in 
 Windows, Linux, Mac OSX, and probably other Unix systems.
 
-::::::::::[USAGE]:::::::::
+# Usage
 lulabi help
 lulabi build -c <compiler> -std <c_standard> -o <output_file> -f <source_directory>
 
