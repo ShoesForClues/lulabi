@@ -9,7 +9,8 @@ their C/C++ projects.
 # Installation
 You must have [LuaRocks](https://github.com/luarocks/luarocks) installed in order to run LuLABI.
 
-Once LuaRocks has been installed, you must then install LuaFileSystem: 
+Once LuaRocks has been installed, you must then install LuaFileSystem:
+
 ```luarocks install luafilesystem```
 
 You will also need some compiler such as GCC (Linux/Unix) or have Visual Studio installed for 
