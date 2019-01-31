@@ -9,7 +9,7 @@
 
 return function(thread)
 	local API={
-		_version={0,0,7};
+		_version={0,0,8};
 		_dependencies={
 			"stdlib";
 		};
@@ -107,6 +107,19 @@ return function(thread)
 			end
 		end
 		return name
+	end
+	
+	function API:get_extension(file_name)
+		local extension=""
+		local file_name_len=thread.libraries["stdlib"].root_functions.string.len(file_name)
+		for i=1,file_name_len do
+			local char=thread.libraries["stdlib"].root_functions.string.sub(file_name,file_name_len+1-i,file_name_len+1-i)
+			if char~="." then
+				extension=char..extension
+			else
+				return extension
+			end
+		end
 	end
 	
 	function API:split(line,divider,manipulator)

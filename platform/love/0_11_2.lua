@@ -1,15 +1,13 @@
 --________________________________Dependencies_________________________________
 local stdplib=require("lib/stdplib")
-local lfs=require("lfs")
 --_____________________________________________________________________________
 
 local platform={
-	_target="none";
-	_version={0,3,7};
+	_target="love_11";
+	_version={0,3,6};
 	_platform={operating_system="unknown";bits=32;};
 	_config={
 		hide_info=false;
-		raw_file_path=false;
 	};
 	
 	start_tick=os.clock();
@@ -116,13 +114,7 @@ local platform={
 }
 
 function platform:get_running_platform()                                                           --Get the platform specs
-	if stdplib.root_functions.string.find(stdplib.root_functions.string.lower(platform:execute_command("ver")),"windows")~=nil then
-		platform._platform={operating_system="windows";bits=32;}
-	elseif stdplib.root_functions.string.find(stdplib.root_functions.string.lower(platform:execute_command("uname")),"linux")~=nil then
-		platform._platform={operating_system="linux";bits=32;}
-	elseif stdplib.root_functions.string.find(stdplib.root_functions.string.lower(platform:execute_command("sw_vers")),"OS X")~=nil then
-		platform._platform={operating_system="osx";bits=32;}
-	end
+	platform._platform={operating_system=love.system.getOS();bits=32;}
 	return platform._platform
 end
 
@@ -141,7 +133,7 @@ function platform:execute_command(code,multithread)                             
 	return output
 end
 
-function platform:exit() os.exit() end                                                             --End the program
+function platform:exit() love.event.quit() end                                                     --End the program
 
 function platform:print(text) print(text) platform.output_update:invoke(text) end                  --Output text to console
 function platform:info(message)                                                                    --Output info to console
@@ -151,9 +143,6 @@ end
 
 function platform:get_file(path,current_file)                                                      --Retrieve file via path
 	if path==nil then return end
-	if platform._config.raw_file_path==true or (stdplib.root_functions.string.find(stdplib.root_functions.string.lower(platform._platform.operating_system),"windows")==nil and stdplib.root_functions.string.find(stdplib.root_functions.string.lower(platform._platform.operating_system),"dos")==nil) then 
-		return path
-	end
 	path=path.." "
 	current_file=current_file or platform.default.current_file
 	local path_length,step,file_name=stdplib.root_functions.string.len(path),0,""
@@ -186,44 +175,18 @@ function platform:get_file(path,current_file)                                   
 end
 
 function platform:file_exists(file)                                                                --Check if file exists
-	file=platform:get_file(file)
-	local exists,_,code=os.rename(file,file)
-	if not exists then
-		if code==13 then
-			return true
-		end
-	end
-	return exists
+	return love.filesystem.getInfo(platform:get_file(file))~=nil
 end
-
 function platform:get_sub_files(file)                                                              --Get a list of sub files
-	local files={}
-	for file in lfs.dir(platform:get_file(file)) do
-		files[#files+1]=file
-	end
-	return files
-end
-function platform:get_file_attributes(file)
-	local attributes=lfs.attributes(platform:get_file(file))
-	if attributes==nil then return end
-	return {
-		drive=attributes.dev;
-		type=attributes.mode;
-		size=attributes.size;
-		permissions=attributes.permissions;
-		user_owner_id=attributes.uid;
-		group_owner_id=attributes.gid;
-		time_accessed=attributes.access;
-		time_modified=attributes.modification;
-	}
+	return love.filesystem.getDirectoryItems(platform:get_file(file))
 end
 function platform:get_full_path(file)                                                              --Get full path of file
-	return ""
+	return love.filesystem.getRealDirectory(platform:get_file(file))
 end
 function platform:read_file(file,yield_call)
 	if platform:file_exists(file)==false then return "" end
 	local data=""
-	for line in io.lines(platform:get_file(file)) do 
+	for line in love.filesystem.lines(platform:get_file(file)) do
 		data=data..line
 		if yield_call~=nil then
 			yield_call()
@@ -234,7 +197,7 @@ end
 function platform:create_file(file_name)
 	if file_name==nil then return end
 	
-	local source,error=io.open(platform:get_file(file_name),"w")
+	local source,error=love.filesystem.newFile(platform:get_file(file_name))
 	
 	if error~=nil then
 		platform:info(error)
@@ -268,44 +231,72 @@ function platform:require(file)                                                 
 	return lib
 end
 
-function platform:yield(duration)                                                                  --Yield the entire thread
-	local s=os.clock()
-	while os.clock()-s<=duration do end
-end
+function platform:yield(duration) love.timer.sleep(duration) end                                   --Yield the entire thread
 function platform:get_tick() return os.clock()-platform.start_tick end                             --Get the current clock tick
-function platform:get_frame_rate() return 0 end                                                    --Get the current FPS
+function platform:get_frame_rate() return love.timer.getFPS() end                                  --Get the current FPS
 
 function platform:get_joystick_key_press(joystick_id,...)                                          --Check if joystick button is pressed
-	return false
+	local state=false
+	for id,joystick in pairs(love.joystick.getJoysticks()) do
+		if joystick_id==id then
+			state=joystick:isDown(...) or false
+		end
+	end
+	return state
 end
-function platform:get_key_press(...) end                                                           --Check if keyboard button is pressed
-function platform:get_mouse_key_press(...) end                                                     --Check if mouse button is pressed
+function platform:get_key_press(...) return love.keyboard.isDown(...) end                          --Check if keyboard button is pressed
+function platform:get_mouse_key_press(...) return love.mouse.isDown(...) end                       --Check if mouse button is pressed
 function platform:update_pointers()                                                                --Update pointers
-	
+	local pointers={}
+	local mouse_x,mouse_y=love.mouse.getPosition()
+	--[[
+	if love.mouse.isDown(1)==true and love.mouse.isDown(2)==true then
+		table.insert(pointers,#pointers+1,{id=1,position={x=mouse_x,y=mouse_y}})
+	end
+	--]]
+	for _,id in pairs(love.touch.getTouches()) do
+		local touch_x,touch_y=love.touch.getPosition(id)
+		table.insert(pointers,#pointers+1,{id=id,position={x=touch_x,y=touch_y}})
+	end
+	platform.pointers:set_value(pointers)
 end
 
 function platform:set_filter_mode(min_mode,max_mode,anistropy)                                     --Set image scaling filter mode
-	
+	love.graphics.setDefaultFilter(min_mode,max_mode,anistropy)
 end
 
 function platform:set_blend_mode(mode,alpha_mode)                                                  --Set blend mode
-	
+	love.graphics.setBlendMode(mode,alphamode)
 end
 
 function platform:set_cursor_visibility(state)                                                     --Set cursor visibility
-	
+	love.mouse.setVisible(state or false)
 end
 
 function platform:set_cursor_lock(state)                                                           --Set cursor lock
-	
+	love.mouse.setRelativeMode(state or false)
 end
 
 function platform:get_buffer_resolution(buffer)                                                    --Get current screen resolution
-	return {x=0,y=0}
+	local resolution={x=love.graphics.getWidth(),y=love.graphics.getHeight()}
+	if buffer~=nil then
+		resolution={x=buffer:getWidth(),y=buffer:getHeight()}
+	else
+		platform.screen_resolution:set_value(resolution)
+	end
+	return resolution
 end
 
 function platform:get_max_resolution()                                                             --Get max supported screen resolution
-	return {x=0,y=0}
+	if love.window==nil then return {x=0,y=0} end
+	local modes=love.window.getFullscreenModes()
+	local max_mode=modes[1]
+	for _,mode in pairs(modes) do
+		if mode.width>max_mode.width and mode.height>max_mode.height then
+			max_mode=mode
+		end
+	end
+	return {x=max_mode.width,y=max_mode.height}
 end
 
 function platform:load_source(file,file_type,properties)                                           --Load asset in memory for future reference
@@ -313,19 +304,36 @@ function platform:load_source(file,file_type,properties)                        
 	properties=properties or {}
 	if file_type==platform.enum.file_type.image then
 		if platform.assets[file]==nil then
-			
+			success,platform.assets[file]=pcall(love.graphics.newImage,platform:get_file(file))
+			if success==false then
+				platform:info("Failed to load image: "..file)
+			end
 		end
 	elseif file_type==platform.enum.file_type.font then
 		if platform.assets[file]==nil then
-			
+			local font={}
+			for i=6,108 do
+				success,font[i]=pcall(love.graphics.newFont,platform:get_file(file),i)
+				if success==false then
+					platform:info("Failed to load font: "..file)
+					break
+				end
+			end
+			platform.assets[file]=font
 		end
 	elseif file_type==platform.enum.file_type.audio then
 		if platform.assets[file]==nil then
-			
+			success,platform.assets[file]=pcall(love.sound.newSoundData,platform:get_file(file))
+			if success==false then
+				platform:info("Failed to load audio: "..file)
+			end
 		end
 	elseif file_type==platform.enum.file_type.model then
 		if platform.assets[file]==nil then
-			
+			success,platform.assets[file]=pcall(iqm.load,platform:get_file(file))
+			if success==false then
+				platform:info("Failed to load model: "..file)
+			end
 		end
 	end
 	return platform.assets[file]
@@ -335,7 +343,7 @@ function platform:load_sources(files) if files==nil or type(file)~="table" then 
 end
 function platform:unload_source(file)                                                              --Unload asset
 	if platform.assets[file]~=nil then
-		--platform.assets[file]:release()
+		platform.assets[file]:release()
 		platform.assets[file]=nil
 	end
 end
@@ -346,87 +354,135 @@ function platform:clear_sources()                                               
 end
 
 function platform:create_buffer(...)                                                               --Create an external buffer
-	
+	local args={...}
+	local buffer=love.graphics.newCanvas(...)
+	return buffer
 end
 function platform:set_current_buffer(...)                                                          --Begin drawing to a buffer
-	
+	love.graphics.setCanvas(...)
 end
 function platform:clear_buffer(color,opacity,active_buffers)                                       --Clears buffer
-	
+	love.graphics.clear({color.r,color.g,color.b,(1-opacity)},unpack(active_buffers))
 end
 
 function platform:render_image(source,position,size,rotation,wrap,background_color,source_color,filter_mode,anistropy,buffer) --Render image to the buffer
-	
+	if position==nil or size==nil or source==love.graphics.getCanvas() then return end
+	if wrap~=nil then
+		if position.x+size.x<wrap.x1 or position.x>wrap.x2 or position.y+size.y<wrap.y1 or position.y>wrap.y2 then return end
+		love.graphics.setScissor(wrap.x1,wrap.y1,wrap.x2-wrap.x1,wrap.y2-wrap.y1)
+	end
+	love.graphics.setColor(background_color.r,background_color.g,background_color.b,(1-background_color.a))
+	love.graphics.rectangle("fill",position.x,position.y,size.x,size.y)
+	if source~=nil then
+		source:setFilter(filter_mode or platform.enum.filter_mode.nearest,filter_mode or platform.enum.filter_mode.nearest,anistropy or 0)
+		love.graphics.setColor(source_color.r,source_color.g,source_color.b,(1-source_color.a))
+		love.graphics.draw(
+			source,
+			position.x,position.y,stdplib.root_functions.math.rad(rotation),
+			size.x/source:getWidth(),size.y/source:getHeight()
+		)
+	end
+	love.graphics.setScissor()
+	love.graphics.setColor(1,1,1,1)
 end
 
 function platform:get_text_size(text,font,font_size)
-	return {x=0,y=0}
+	local size={x=font[font_size]:getWidth(text),y=font[font_size]:getHeight()}
+	if text==nil or font==nil or font_size==nil then
+		size={x=0,y=0}
+	end
+	return size
 end
 function platform:render_text(text,position,wrap,wrapped,color,alignment,font,font_size,buffer)    --Render text to the screen
-	
+	font=font or platform.default.font
+	local text_size=platform:get_text_size(text,font,font_size)
+	local wrap_center={x=(wrap.x1+wrap.x2)/2,y=(wrap.y1+wrap.y2)/2}
+	if alignment.x=="center" then
+		position.x=wrap_center.x-(text_size.x/2)
+	elseif alignment.x=="right" then
+		position.x=wrap.x2-text_size.x
+	end
+	if alignment.y=="center" then
+		position.y=wrap_center.y-(text_size.y/2)
+	elseif alignment.y=="bottom" then
+		position.y=wrap.y2-text_size.y
+	end
+	if wrapped==true and wrap~=nil then
+		love.graphics.setScissor(wrap.x1,wrap.y1,wrap.x2-wrap.x1,wrap.y2-wrap.y1)
+	end
+	if color~=nil then
+		love.graphics.setColor(color.r,color.g,color.b,(1-color.a))
+	end
+	if font[font_size]~=nil then
+		font[font_size]:setFilter(platform.enum.filter_mode.nearest,platform.enum.filter_mode.nearest,0)
+		love.graphics.setFont(font[font_size])
+		love.graphics.printf(text,position.x,position.y,wrap.x2-wrap.x1,"left")
+	end
+	love.graphics.setScissor()
+	love.graphics.setColor(1,1,1,1)
 end
 
 function platform:create_audio(properties)                                                         --Create an audio source
 	local audio_object={
-		source;
+		source=love.audio.newSource(properties.source);
 	}
 	function audio_object:set_source(source)
-		
+		audio_object.source=love.audio.newSource(source)
 	end
 	function audio_object:set_state(state)
 		if state==platform.enum.audio_state.play then
-			--audio_object.source:play()
+			audio_object.source:play()
 		elseif state==platform.enum.audio_state.stop then
-			--audio_object.source:stop()
+			audio_object.source:stop()
 		elseif state==platform.enum.audio_state.pause then
-			--audio_object.source:pause()
+			audio_object.source:pause()
 		end
 	end
 	function audio_object:play()
-		--audio_object.source:play()
+		audio_object.source:play()
 	end
 	function audio_object:pause()
-		--audio_object.source:pause()
+		audio_object.source:pause()
 	end
 	function audio_object:resume()
-		--audio_object.source:resume()
+		audio_object.source:resume()
 	end
 	function audio_object:stop()
-		--audio_object.source:stop()
+		audio_object.source:stop()
 	end
 	function audio_object:set_position(position) position=position or 0
-		--audio_object.source:seek(position)
+		audio_object.source:seek(position)
 	end
 	function audio_object:set_loop(state) state=state or false
-		--audio_object.source:setLooping(state)
+		audio_object.source:setLooping(state)
 	end
 	function audio_object:set_pitch(pitch) pitch=pitch or 1
-		--audio_object.source:setPitch(pitch)
+		audio_object.source:setPitch(pitch)
 	end
 	function audio_object:set_volume(volume) volume=volume or 1
-		--audio_object.source:setVolume(volume)
+		audio_object.source:setVolume(volume)
 	end
 	function audio_object:get_source() return source end
 	function audio_object:get_playing_state()
-		return false
+		return audio_object.source:isPlaying()
 	end
 	function audio_object:get_pause()
-		return false
+		return not audio_object.source:isPlaying()
 	end
 	function audio_object:get_position()
-		return 0
+		return audio_object.source:tell()
 	end
 	function audio_object:get_duration()
-		return 0
+		return audio_object.source:getDuration()
 	end
 	function audio_object:get_loop()
-		return false
+		return audio_object.source:isLooping()
 	end
 	function audio_object:get_volume()
-		return 0
+		return audio_object.source:getVolume()
 	end
 	function audio_object:get_pitch()
-		return 0
+		return audio_object.source:getPitch()
 	end
 	
 	--audio_object:play();audio_object:pause();
@@ -439,17 +495,36 @@ function platform:create_audio(properties)                                      
 end
 
 function platform:set_error_handler(handler)
-	
+	function love.errorhandler(error_message)
+		return handler(tostring(error_message))
+	end
 end
 
 function platform:set_screen_mode(mode)
-	
+	if mode~=nil and love.window~=nil then
+		if mode==platform.enum.screen_mode.full_screen and platform.current_screen_mode.value~=mode then
+			love.window.setFullscreen(true,"exclusive")
+		elseif mode==platform.enum.screen_mode.window and platform.current_screen_mode.value~=mode then
+			love.window.setFullscreen(false)
+		end
+		platform.current_screen_mode:set_value(mode)
+	end
 end
 function platform:set_window(resolution,title,frame_rate)
-	
+	if love.window==nil then return end
+	resolution=resolution or {x=640,y=480}
+	local vsync=false
+	if frame_rate~=nil and frame_rate<=60 then vsync=true end
+	love.window.setTitle(title or "")
+	love.window.setMode(
+		resolution.x,resolution.y,
+		{resizable=true,minwidth=320,minheight=200,vsync=vsync}
+	)
 end
 function platform:set_window_position(position)
-	
+	if position~=nil and love.window~=nil then
+		love.window.setPosition(position.x,position.y,1)
+	end
 end
 
 --____________________________________Setup____________________________________
@@ -458,18 +533,53 @@ function platform:initialize(properties)
 	
 	platform:get_running_platform()
 	
-	if lfs==nil then
-		platform:print("Error: LuaFileSystem is not installed")
-		platform:exit()
-	end
+	platform:set_filter_mode(platform.enum.filter_mode.nearest,platform.enum.filter_mode.nearest,0) 
+	platform:set_window(properties.screen_resolution,properties.window_title,properties.frame_rate)
+	platform:set_screen_mode(properties.screen_mode)
+	platform:set_cursor_visibility(properties.cursor_visible)
+	platform:set_cursor_lock(properties.cursor_lock)
 	
-	while true do
-		platform.update_stepped:invoke()
-		platform:yield(1/60)
+	--::::::::::::::::::::[Callbacks]::::::::::::::::::::
+	function love.keypressed(key) platform.key_state:invoke({key=key,state=true}) end
+	function love.keyreleased(key) platform.key_state:invoke({key=key,state=false}) end
+	function love.joystickpressed(joystick,key)
+		local id,_=joystick:getID()
+		platform.joystick_key_state:invoke({id=id or 1,key=key,state=true})
+	end
+	function love.joystickreleased(joystick,key)
+		local id,_=joystick:getID()
+		platform.joystick_key_state:invoke({id=id or 1,key=key,state=false})
+	end
+	function love.textinput(text) platform.text_input:invoke(text) end
+	function love.touchpressed(id,x,y) platform:update_pointers() end
+	function love.touchreleased(id,x,y) platform:update_pointers() end
+	function love.mousepressed(x,y,id)
+		platform.mouse_key_state:invoke({key=id,state=true})
+	end
+	function love.mousereleased(x,y,id)
+		platform.mouse_key_state:invoke({key=id,state=false})
+	end
+	function love.mousemoved(x,y,dx,dy)
+		platform.mouse_position:set_value({x=x,y=y})
+		platform.mouse_moved:invoke({x=dx,y=dy})
+	end
+	function love.touchmoved() platform:update_pointers() end
+	function love.update(...) platform.update_stepped:invoke(...) end
+	function love.resize(x,y) platform.screen_resolution:set_value({x=x,y=y}) end
+	function love.wheelmoved(x,y) platform.wheel_scrolled:invoke({x=x,y=y}) end
+
+	platform:get_buffer_resolution()
+
+	for i=6,72 do
+		_,platform.default.font[i]=pcall(love.graphics.newFont,i)
 	end
 
 	--::::::::::::::::::::[Rendering]::::::::::::::::::::
-	
+	function love.draw(...)
+		platform.render_stepped:invoke(...)
+		--platform.update_stepped:invoke(...)
+		--love.graphics.print("FPS: "..tostring(platform:get_frame_rate()))
+	end
 end
 --_____________________________________________________________________________
 

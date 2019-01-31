@@ -9,7 +9,7 @@
 
 return function(thread)
 	local API={
-		_version={0,3,6};
+		_version={0,3,7};
 		enum={
 			object_type={
 				property={};
@@ -319,6 +319,31 @@ return function(thread)
 	
 	function API:create_name_space(env)
 		env()
+	end
+	
+	function API:merge_tables(...)
+		local tables={...}
+		local new_table={}
+		
+		for _,current_table in pairs(tables) do
+			for i,v in pairs(current_table) do
+				if new_table[i]==nil then
+					new_table[i]=v
+				end
+			end
+		end
+		
+		return new_table
+	end
+	
+	function API:find(t,value)
+		local indexes={}
+		for i,v in pairs(t) do
+			if v==value then
+				indexes[#indexes+1]=i
+			end
+		end
+		return indexes
 	end
 
 	return API
