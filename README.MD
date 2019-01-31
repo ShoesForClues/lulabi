@@ -1,5 +1,5 @@
 # LuLABI
-Lua Lightweight Application Building Interface [Version 0.0.1]
+Lua Lightweight Application Building Interface [Version 0.0.7]
 
 Software created by Jason Lee © 2019
 
