@@ -29,6 +29,28 @@ lulabi build -c <compiler> -std <c_standard> -o <output_file> -f <source>
 -f <source>             Set source directory to compile
 ```
 
+It is recommended to use a lulabi_make file, which is a JSON encoded text file:
+```json
+{
+	"project_name": "test",
+	"output": "test",
+	"compiler": "g++",
+	"std": "gnu++0x",
+	"dependencies": [],
+	"includes": ["include_directory"],
+	"embeds": ["embed_directory"],
+	"cflags": ["O2","Wall","s"],
+	"defines": []
+}
+```
+You can then build the project as so:
+```
+rem You must use the full path to the source directory
+lulabi build -f C:/Users/%username%/desktop/test
+```
+
+The lulabi_make file should be in the root of the source directory.
+
 # License
 This software is free to use. You can modify it and redistribute it under the terms of the 
 MIT license. Check [LICENSE](LICENSE) for further details.
