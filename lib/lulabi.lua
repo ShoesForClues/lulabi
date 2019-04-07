@@ -1,6 +1,6 @@
 return function(thread)
 	local API={
-		_version={0,0,7};
+		_version={0,1,0};
 		_dependencies={
 			"stdlib";
 			"parser";
@@ -30,8 +30,10 @@ return function(thread)
 	
 	function API:build(file,build_config)
 		if thread.platform:file_exists(file.."/lulabi_make")==true then
-			build_config=thread.libraries["stdlib"]:merge_tables(build_config,thread.libraries["json"].decode(thread.platform:read_file(file.."/lulabi_make",thread.runtime.wait)))
+			build_config=thread.libraries["stdlib"]:merge_tables(build_config,thread.libraries["json"].decode(thread.platform:read_text_file(file.."/lulabi_make",thread.runtime.wait)))
 		end
+		
+		local temp_files={}
 	
 		build_config=thread.libraries["stdlib"]:merge_tables(build_config,{
 			project_name="project";
@@ -46,7 +48,7 @@ return function(thread)
 			embeds={};
 		})
 		
-		thread.platform:info("Building project: "..tostring(build_config.project_name))
+		thread.platform:info("Building: "..tostring(build_config.project_name))
 		
 		thread.platform:print("Compiler: "..tostring(build_config.compiler))
 		thread.platform:print("Standard: "..tostring(build_config.std))
@@ -62,6 +64,40 @@ return function(thread)
 				local attributes=thread.platform:get_file_attributes(file.."/"..embed)
 				if attributes.type=="directory" then
 					sub_includes[#sub_includes+1]=file.."/"..embed
+					for _,sub_file in pairs(API:get_all_descendants(file.."/"..embed)) do
+						local embed_attributes=thread.platform:get_file_attributes(sub_file)
+						if embed_attributes.type~="directory" then
+							thread.platform:info("Embedding: "..sub_file)
+							local embed_name=thread.libraries["stdlib"].root_functions.string.gsub(thread.libraries["parser"]:get_name(sub_file),"%.","_")
+							local embed_file=thread.platform:create_file(file.."/"..embed.."/"..embed_name..".h")
+							
+							local embed_data=thread.platform:read_raw_file(sub_file,thread.runtime.wait)
+							
+							temp_files[#temp_files+1]=file.."/"..embed.."/"..embed_name..".h"
+							embed_file:open("w")
+							
+							embed_file:write("static const char "..embed_name.."[]={\n")
+							
+							local current_line,current_line_size="",0
+							for a,b in pairs(embed_data) do
+								if a<#embed_data then
+									current_line=current_line..tostring(b)..","
+								else
+									current_line=current_line..tostring(b)
+								end
+								current_line_size=current_line_size+1
+								if current_line_size>20 or a>=#embed_data then
+									embed_file:write(current_line.."\n")
+									current_line=""
+									current_line_size=0
+								end
+							end
+							
+							embed_file:write("};")
+							
+							embed_file:close()
+						end
+					end
 				end
 			end
 			
@@ -86,6 +122,11 @@ return function(thread)
 			thread.platform:info("Finished.")
 		else
 			thread.platform:info("Error: Cannot find compiler "..build_config.compiler)
+		end
+		
+		for _,file in pairs(temp_files) do
+			thread.platform:info("Deleting temp file: "..file)
+			thread.platform:delete_file(file)
 		end
 	end
 	
