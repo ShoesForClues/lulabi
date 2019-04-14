@@ -5,7 +5,7 @@ cd /d %~dp0
 where >nul 2>nul lua
 
 if %errorlevel% equ 0 (
-	lua main.lua %*
+	lua lulabi.lua %*
 ) else (
 	echo Error: Lua is not installed
 )

@@ -1,11 +1,12 @@
 return function(thread)
 	local API={
-		_version={0,1,0};
+		_version={0,1,2};
 		_dependencies={
 			"stdlib";
 			"parser";
 			"json";
 			"lip";
+			"ansicolors";
 		};
 		default={
 			core_file_extensions={"c","cc","cpp"};
@@ -46,19 +47,20 @@ return function(thread)
 			defines={};
 			core_files={};
 			embeds={};
+			libs={};
 		})
 		
-		thread.platform:info("Building: "..tostring(build_config.project_name))
+		thread.platform:info(thread.libraries["ansicolors"].cyan.."Building: "..thread.libraries["ansicolors"].reset..tostring(build_config.project_name))
 		
-		thread.platform:print("Compiler: "..tostring(build_config.compiler))
-		thread.platform:print("Standard: "..tostring(build_config.std))
+		thread.platform:info("Compiler: "..tostring(build_config.compiler))
+		thread.platform:info("Standard: "..tostring(build_config.std))
 		
 		if thread.platform:file_exists("compiler/"..build_config.compiler..".lua")==true then
 			local compiler=thread.platform:require("compiler/"..build_config.compiler)
 			
 			build_config.output=file.."/"..build_config.output
 			
-			local sub_includes={file}
+			local sub_includes={}
 			
 			for i,embed in pairs(build_config.embeds) do
 				local attributes=thread.platform:get_file_attributes(file.."/"..embed)
@@ -110,16 +112,29 @@ return function(thread)
 					end
 				end
 			end
-			build_config.includes=thread.libraries["stdlib"]:group_tables(build_config.includes,sub_includes)
+			build_config.includes=thread.libraries["stdlib"]:group_tables({file},build_config.includes,sub_includes)
 			
+			for _,include in pairs(build_config.includes) do
+				for _,sub_file in pairs(thread.platform:get_sub_files(include)) do
+					if #thread.libraries["stdlib"]:find(API.default.core_file_extensions,thread.libraries["parser"]:get_extension(thread.libraries["parser"]:get_name(include.."/"..sub_file)))>0 then
+						build_config.core_files[#build_config.core_files+1]=include.."/"..sub_file
+					end
+				end
+			end
+			
+			--[[
 			for _,sub_file in pairs(API:get_all_descendants(file)) do
 				if #thread.libraries["stdlib"]:find(API.default.core_file_extensions,thread.libraries["parser"]:get_extension(thread.libraries["parser"]:get_name(sub_file)))>0 then
 					build_config.core_files[#build_config.core_files+1]=sub_file
 				end
 			end
+			--]]
 			
-			thread.platform:info(compiler(thread,build_config))
-			thread.platform:info("Finished.")
+			if select(1,compiler(thread,build_config))==true then
+				thread.platform:info(thread.libraries["ansicolors"].green.."Compiling successful.")
+			else
+				thread.platform:info(thread.libraries["ansicolors"].red.."Compiling failed.")
+			end
 		else
 			thread.platform:info("Error: Cannot find compiler "..build_config.compiler)
 		end

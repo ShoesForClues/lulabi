@@ -116,11 +116,11 @@ local platform={
 }
 
 function platform:get_running_platform()                                                           --Get the platform specs
-	if stdplib.root_functions.string.find(stdplib.root_functions.string.lower(platform:execute_command("ver")),"windows")~=nil then
+	if stdplib.root_functions.string.find(stdplib.root_functions.string.lower(select(2,platform:execute_command("ver"))),"windows")~=nil then
 		platform._platform={operating_system="windows";bits=32;}
-	elseif stdplib.root_functions.string.find(stdplib.root_functions.string.lower(platform:execute_command("uname")),"linux")~=nil then
+	elseif stdplib.root_functions.string.find(stdplib.root_functions.string.lower(select(2,platform:execute_command("uname"))),"linux")~=nil then
 		platform._platform={operating_system="linux";bits=32;}
-	elseif stdplib.root_functions.string.find(stdplib.root_functions.string.lower(platform:execute_command("sw_vers")),"OS X")~=nil then
+	elseif stdplib.root_functions.string.find(stdplib.root_functions.string.lower(select(2,platform:execute_command("sw_vers"))),"OS X")~=nil then
 		platform._platform={operating_system="osx";bits=32;}
 	end
 	return platform._platform
@@ -128,17 +128,19 @@ end
 
 function platform:execute_command(code,multithread)                                                --Execute OS specific commands
 	if code==nil then return end
-	local output=""
+	local status,output=false,""
 	
 	if multithread==true then
 		
 	else
 		local handle=io.popen(code)
-		output=handle:read("*a")
-		handle:close()
+		if handle~=nil then
+			output=handle:read("*a")
+			status=handle:close()
+		end
 	end
 	
-	return output
+	return status,output
 end
 
 function platform:exit() os.exit() end                                                             --End the program
@@ -220,15 +222,38 @@ end
 function platform:get_full_path(file)                                                              --Get full path of file
 	return ""
 end
-function platform:read_file(file,yield_call)
+function platform:read_text_file(file,yield_call)
 	if platform:file_exists(file)==false then return "" end
 	local data=""
-	for line in io.lines(platform:get_file(file)) do 
-		data=data..line
+	local line_count=0
+	for line in io.lines(platform:get_file(file)) do
+		line_count=line_count+1
+		if line_count>1 then
+			data=data.."\n"..line
+		else
+			data=data..line
+		end
 		if yield_call~=nil then
 			yield_call()
 		end
 	end
+	return data
+end
+function platform:read_raw_file(file,yield_call)
+	if platform:file_exists(file)==false then return {} end
+	file=platform:get_file(file)
+	local f=assert(io.open(file,'rb'))
+	local data={}
+	repeat
+		local str=f:read(4*1024)
+		for c in (str or ''):gmatch'.' do
+			data[#data+1] = c:byte()
+		end
+		if yield_call~=nil then
+			yield_call()
+		end
+	until not str
+	f:close()
 	return data
 end
 function platform:create_file(file_name)
@@ -244,20 +269,35 @@ function platform:create_file(file_name)
 		source=source;
 	}
 	
-	function file:write_line(data)
-		file.source:write(data.."\r\n")
+	function file:write(data)
+		file.source:write(data)
 	end
 	function file:clear()
 		file.source:flush()
 	end
 	function file:open(file_mode)
-		file.source:open(file_mode)
+		--file.source:open(file_mode)
 	end
 	function file:close()
 		file.source:close()
 	end
 	
 	return file
+end
+
+function platform:create_directory(file)
+	return lfs.mkdir(platform:get_file(file))
+end
+function platform:delete_file(file)
+	file=platform:get_file(file)
+	if platform:file_exists(file)==false then return end
+	local attributes=lfs.attributes(file)
+	
+	if attributes.type=="directory" then
+		return lfs.rmdir(file)
+	else
+		return os.remove(file)
+	end
 end
 
 function platform:require(file)                                                                    --Get a value from a lua file

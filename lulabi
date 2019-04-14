@@ -1,1 +1,1 @@
-lua main.lua "$@";
+lua lulabi.lua "$@";
