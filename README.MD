@@ -7,9 +7,9 @@ LuLABI (lullaby) is a build system written in pure lua that allows the user to e
 their C/C++ projects.
 
 # Installation
-You must install lua such as [LuaRocks](https://github.com/luarocks/luarocks) in order to run LuLABI.
+You must install Lua such as [LuaRocks](https://github.com/luarocks/luarocks) in order to run LuLABI.
 
-Once lua has been installed, you must then install LuaFileSystem. Some lua interpreters may already include it.
+Once Lua has been installed, you must then install LuaFileSystem. Some lua interpreters may already include it.
 
 Installing LFS on Luarocks:
 ```luarocks install luafilesystem```
