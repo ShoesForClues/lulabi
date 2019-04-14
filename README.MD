@@ -1,5 +1,5 @@
 # LuLABI
-Lua Lightweight Application Building Interface [Version 0.0.7]
+Lua Lightweight Application Building Interface [Version 0.1.2]
 
 Software created by Jason Lee © 2019
 
@@ -38,7 +38,8 @@ It is recommended to use a lulabi_make file, which is a JSON encoded text file:
 	"std": "gnu++0x",
 	"dependencies": [],
 	"includes": ["include_directory"],
-	"embeds": ["embed_directory"],
+	"libs": [],
+	"embeds": [],
 	"cflags": ["O2","Wall","s"],
 	"defines": []
 }
